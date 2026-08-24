@@ -97,6 +97,50 @@ export function ResultsPage({ result, saved, onSave, onNew, onEdit }: Props) {
           </div>
         </div>
 
+        {/* Distribution summary: fixed vs residue vs asabah vs awl */}
+        <section className="print-card mt-6 rounded-2xl border border-mint-2 bg-paper p-5 shadow-card sm:p-6" aria-label={t("result.summary.title")}>
+          <h2 className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-primary/70">{t("result.summary.title")}</h2>
+          <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <div className="text-xs font-semibold text-ink/55">{t("result.summary.fixed")}</div>
+              <div className="mt-1 font-display text-2xl font-bold text-primary" dir="ltr">{result.summary.fixedTotal}</div>
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-ink/55">{t("result.summary.residue")}</div>
+              <div className="mt-1 font-display text-2xl font-bold text-deep" dir="ltr">{result.summary.residue}</div>
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-ink/55">{t("result.summary.asabah")}</div>
+              <div className="mt-1.5 font-display text-lg font-bold leading-snug text-deep">
+                {result.summary.asabahRecipients.length > 0
+                  ? result.summary.asabahRecipients.map((r) => t(`rel.${r}` as never)).join(lang === "ar" ? "، " : ", ")
+                  : "—"}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-ink/55">{t("result.summary.awl")}</div>
+              <div className={`mt-1.5 inline-block rounded-full px-3.5 py-1 font-display text-sm font-bold ${result.awl.applied ? "bg-gold-soft text-blocked" : "bg-mint text-primary"}`}>
+                {result.awl.applied ? t("result.summary.applied") : t("result.summary.notApplied")}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Special asabah rule — shown only where its exact conditions matched */}
+        {result.specialAsabah && (
+          <div className="anim-fade-up mt-4 rounded-xl border border-primary/40 bg-mint p-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-display text-lg font-bold text-deep">{t("result.specialRule.title")}</span>
+              <span className="rounded-full bg-gold-soft px-2.5 py-0.5 text-xs font-bold text-blocked">{t("result.specialRule.pending")}</span>
+              <span className="rounded-md bg-deep px-2 py-0.5 font-mono text-[10px] font-bold text-mint" dir="ltr">{result.specialAsabah.ruleId}</span>
+            </div>
+            <p dir="rtl" lang="ar" className="mt-3 rounded-lg bg-paper/75 p-4 text-center font-display text-xl leading-loose text-deep">
+              {result.specialAsabah.sourceText}
+            </p>
+            <p className="mt-3 text-sm font-bold leading-relaxed text-deep">{t("result.noAwlBecauseAsabah")}</p>
+          </div>
+        )}
+
         {/* Awl / Radd banners */}
         {result.awl.applied && (
           <div className="anim-fade-up mt-4 flex items-start gap-3 rounded-xl border border-gold/50 bg-gold-soft/60 p-4 text-sm font-semibold leading-relaxed text-deep">

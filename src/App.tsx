@@ -192,7 +192,7 @@ function AppShell() {
           onClose={() => setShowHistory(false)}
         />
       )}
-      {showAudit && <AuditPanel onClose={() => setShowAudit(false)} />}
+      {showAudit && <AuditPanel result={result} onClose={() => setShowAudit(false)} />}
       {infoTopic && <InfoModal topic={infoTopic} onClose={() => setInfoTopic(null)} />}
     </div>
   );

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import type { HistoryEntry, RuleVerificationStatus } from "../engine/models";
+import type { CalculationResult, HistoryEntry, RuleVerificationStatus } from "../engine/models";
 import { inheritanceRules } from "../shafii/rules";
+import { FEMALE_ASABAH_TABLE } from "../shafii/specialAsabah";
 import { useI18n, type Language } from "../i18n";
 import { formatDate } from "../utils/helpers";
 
@@ -135,7 +136,7 @@ const STATUS_TONE: Record<RuleVerificationStatus, string> = {
   NEEDS_REVISION: "bg-blocked-soft text-blocked",
 };
 
-export function AuditPanel({ onClose }: { onClose: () => void }) {
+export function AuditPanel({ result, onClose }: { result: CalculationResult | null; onClose: () => void }) {
   const { t, lang } = useI18n();
   const [filter, setFilter] = useState<RuleVerificationStatus | "ALL">("ALL");
 
@@ -176,6 +177,118 @@ export function AuditPanel({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 md:p-8">
+          {/* ── Awl vs Asabah decision trail (per §14) ── */}
+          {result && (
+            <section className="mb-8 rounded-xl border border-deep/25 bg-mint/40 p-5 md:p-6">
+              <h3 className="font-display text-xl font-bold text-deep">{t("audit.decision.title")}</h3>
+              <dl className="mt-4 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+                <div>
+                  <dt className="text-xs font-bold uppercase tracking-wider text-primary/70">{t("audit.decision.furud")}</dt>
+                  <dd className="mt-0.5 font-display text-lg font-bold text-deep" dir="ltr">{result.awlDebug.furudTotal}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-bold uppercase tracking-wider text-primary/70">{t("audit.decision.residue")}</dt>
+                  <dd className="mt-0.5 font-display text-lg font-bold text-deep" dir="ltr">{result.awlDebug.potentialResidue}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-bold uppercase tracking-wider text-primary/70">{t("audit.decision.asabah")}</dt>
+                  <dd className="mt-0.5 font-semibold text-ink/85">
+                    {result.awlDebug.potentialAsabah.length > 0
+                      ? result.awlDebug.potentialAsabah.map((r) => t(`rel.${r}` as never)).join(lang === "ar" ? "، " : ", ")
+                      : "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-bold uppercase tracking-wider text-primary/70">{t("audit.decision.special")}</dt>
+                  <dd className="mt-0.5 font-semibold text-ink/85">
+                    {result.awlDebug.specialRuleId ? (
+                      <>
+                        <span className="rounded-md bg-deep px-2 py-0.5 font-mono text-[10px] font-bold text-mint" dir="ltr">{result.awlDebug.specialRuleId}</span>
+                        <span className={`ms-2 text-xs font-bold ${result.specialAsabah ? "text-primary" : "text-blocked"}`}>
+                          {result.specialAsabah ? t("audit.decision.matched") : t("audit.decision.notMatched")}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-xs text-ink/55">{t("audit.decision.notMatched")}</span>
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-bold uppercase tracking-wider text-primary/70">{t("audit.decision.candidate")}</dt>
+                  <dd className={`mt-0.5 font-display text-lg font-bold ${result.awlDebug.awlCandidate ? "text-blocked" : "text-primary"}`}>
+                    {result.awlDebug.awlCandidate ? t("audit.decision.yes") : t("audit.decision.no")}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-bold uppercase tracking-wider text-primary/70">{t("audit.decision.final")}</dt>
+                  <dd className="mt-0.5 flex flex-wrap items-center gap-2">
+                    <span className={`rounded-full px-3 py-1 font-display text-sm font-bold ${result.awlDebug.finalDecision === "AWL" ? "bg-gold-soft text-blocked" : result.awlDebug.finalDecision === "ASABAH_RESIDUE" ? "bg-deep text-mint" : "bg-ink/10 text-ink/70"}`} dir="ltr">
+                      {t(result.awlDebug.finalDecision === "AWL" ? "audit.decision.awl" : result.awlDebug.finalDecision === "ASABAH_RESIDUE" ? "audit.decision.asabahResidue" : "audit.decision.none")}
+                    </span>
+                    {result.awlDebug.ruleId && (
+                      <span className="rounded-md bg-paper px-2 py-0.5 font-mono text-[10px] font-bold text-primary" dir="ltr">{result.awlDebug.ruleId}</span>
+                    )}
+                  </dd>
+                </div>
+              </dl>
+
+              {/* Special rule condition evaluation */}
+              {result.awlDebug.specialAsabahEvaluation.length > 0 && (
+                <div className="mt-4 border-t border-deep/15 pt-3">
+                  <div className="text-xs font-bold uppercase tracking-wider text-primary/70">{t("audit.conditions.title")}</div>
+                  <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                    {result.awlDebug.specialAsabahEvaluation.map((c) => (
+                      <li key={c.conditionKey} className="flex items-center gap-2 text-sm">
+                        <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-bold ${c.passed ? "bg-primary text-mint" : "bg-blocked-soft text-blocked"}`}>
+                          {c.passed ? "✓" : "✗"}
+                        </span>
+                        <span className={c.passed ? "text-ink/80" : "text-ink/55"}>{t(c.conditionKey as never)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {result.specialAsabah && (
+                    <p dir="rtl" lang="ar" className="mt-3 rounded-lg bg-paper/80 p-3 text-center font-display leading-loose text-deep">
+                      {result.specialAsabah.sourceText}
+                    </p>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* ── Female heirs as Asabah — explicit rules table ── */}
+          <section className="mb-8 overflow-x-auto rounded-xl border border-mint-2 bg-paper">
+            <h3 className="p-5 pb-3 font-display text-xl font-bold text-deep">{t("audit.femaleAsabah.title")}</h3>
+            <table className="w-full min-w-[680px] text-sm">
+              <thead>
+                <tr className="border-b-2 border-deep/60 text-xs uppercase tracking-wider text-primary/70">
+                  <th className="px-5 py-2 text-start font-bold">{t("audit.femaleAsabah.heir")}</th>
+                  <th className="px-3 py-2 text-start font-bold">{t("audit.femaleAsabah.condition")}</th>
+                  <th className="px-3 py-2 text-start font-bold">{t("audit.femaleAsabah.type")}</th>
+                  <th className="px-3 py-2 text-start font-bold">{t("audit.femaleAsabah.causedBy")}</th>
+                  <th className="px-3 py-2 text-start font-bold">{t("audit.femaleAsabah.residue")}</th>
+                  <th className="px-5 py-2 text-start font-bold">{t("audit.reference")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {FEMALE_ASABAH_TABLE.map((row) => (
+                  <tr key={row.heir} className="border-b border-mint-2 transition-colors last:border-b-0 hover:bg-mint/40">
+                    <td className="px-5 py-3 font-bold text-ink">{t(`rel.${row.heir}` as never)}</td>
+                    <td className="px-3 py-3 text-ink/75">{t(row.conditionKey as never)}</td>
+                    <td className="px-3 py-3">
+                      <span className="rounded-md bg-mint px-2 py-0.5 text-xs font-bold text-primary">{t(`femAsabah.type.${row.asabahType}` as never)}</span>
+                    </td>
+                    <td className="px-3 py-3 text-ink/75">{t(row.causedByKey as never)}</td>
+                    <td className="px-3 py-3 text-ink/75">{t(row.residueKey as never)}</td>
+                    <td className="px-5 py-3">
+                      <span className="rounded-md bg-deep px-2 py-0.5 font-mono text-[10px] font-bold text-mint" dir="ltr">{row.ruleId}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+
           <ul className="space-y-4">
             {rules.map((r) => (
               <li key={r.id} className="rounded-xl border border-mint-2 bg-paper p-5 transition-all duration-300 hover:border-primary/40 hover:shadow-card">
@@ -187,6 +300,11 @@ export function AuditPanel({ onClose }: { onClose: () => void }) {
                     {t(`audit.${r.verificationStatus}` as never)}
                   </span>
                 </div>
+                {r.sourceText && (
+                  <p dir="rtl" lang="ar" className="mt-3 rounded-lg border border-gold/40 bg-gold-soft/40 p-3 font-display leading-loose text-deep">
+                    {r.sourceText}
+                  </p>
+                )}
                 <p className="mt-3 leading-relaxed text-ink/85">{pick(r.description)}</p>
                 <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
                   <div>

@@ -33,6 +33,34 @@ const MUGHNI = { source: "مغني المحتاج — الخطيب الشربي�
 const TUHFA = { source: "تحفة المحتاج — ابن حجر الهيتمي", location: "كتاب الفرائض" };
 
 export const inheritanceRules: ShafiiRule[] = [
+  // ───────────────────────── SPECIAL ASABAH ─────────────────────────
+  {
+    id: "R-SPECIAL-ASABAH-01",
+    madhhab: "shafii",
+    category: "SPECIAL_ASABAH",
+    sourceText: "للإبنة النصف ولابنة الابن السدس تكملة للثلثين ، وما بقي فللأخت",
+    description: {
+      ar: "«للإبنة النصف ولابنة الابن السدس تكملة للثلثين ، وما بقي فللأخت» — للبنت النصف فرضًا، ولابنة الابن السدس تكملة الثلثين، وما بقي فللأخت الشقيقة عصبةً؛ فلا يُطبَّق العول متى تحققت شروط القاعدة.",
+      en: "“The daughter receives 1/2, the son's daughter 1/6 completing 2/3, and what remains goes to the sister” — the full sister takes the residue as asabah; awl is not applied when the rule's exact conditions hold.",
+      ml: "“മകൾക്ക് 1/2, മകന്റെ മകൾക്ക് 2/3 പൂർത്തിയാക്കാൻ 1/6, ബാക്കി സഹോദരിക്ക്” — വ്യവസ്ഥകൾ കൃത്യമായി പാലിക്കുമ്പോൾ പൂർണ്ണ സഹോദരി ബാക്കി അസബ ആയി എടുക്കുന്നു; ഔൽ പ്രയോഗിക്കില്ല.",
+    },
+    conditions: {
+      ar: "بنت واحدة + بنت ابن فأكثر غير محجوبة + أخت شقيقة فأكثر غير محجوبة + عدم وجود عصبة ذكر (ابن، ابن ابن، أب، جد لأب، أخ شقيق أو لأب)",
+      en: "Exactly one daughter + at least one unblocked son's daughter + at least one unblocked full sister + no male residuary (son, son's son, father, paternal grandfather, full or paternal half-brother)",
+    },
+    result: {
+      ar: "البنت 1/2، وابنة الابن 1/6، والباقي (1/3) للأخت الشقيقة عصبةً — والعول مستبعد",
+      en: "Daughter 1/2, son's daughter 1/6, residue (1/3) to the full sister as asabah — awl excluded",
+    },
+    priority: 90,
+    references: [
+      {
+        source: "النص المرفوع لهذا المشروع — ثبوته وتفسيره رهن التحقق العلمي",
+        location: "Report supplied for this project — authenticity and interpretation pending scholar verification",
+      },
+    ],
+    verificationStatus: "PENDING_REVIEW",
+  },
   // ───────────────────────── ELIGIBILITY ─────────────────────────
   {
     id: "R-ELIG-SPOUSE-01",

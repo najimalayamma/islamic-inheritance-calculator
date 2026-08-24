@@ -70,9 +70,10 @@ src/
     hajb.ts          حجب الحرمان blocking table
     fixedShares.ts   أصحاب الفروض from the complete family configuration
     asabah.ts        العصبة — residue classes & 2:1 pairs
-    awl.ts           العول
+    specialAsabah.ts special asabah/residue rules + female-asabah table
+    awl.ts           العول — gated by shouldApplyAwl (last resort only)
     radd.ts          الرد (spouses excluded — Shafi'i)
-    calculator.ts    the 9-stage pipeline orchestrator
+    calculator.ts    the staged pipeline orchestrator
   i18n/              ar.ts · ml.ts · en.ts + provider
   data/              relationship metadata
   components/        UI only — never contains inheritance logic
@@ -81,7 +82,49 @@ src/
 
 ### Pipeline
 
-`input → validate → family structure → eligibility → hajb → dhawu al-furud → asabah/residue → awl → radd → normalization → percentages → money → explanation steps`.
+```
+input → validate → identify heirs → apply hajb → identify dhawu al-furud
+→ assign fixed shares → identify all possible asabah → check special
+asabah/residue rules → calculate remainder
+→ if a valid asabah exists: distribute remainder to the asabah
+  else: check whether awl applies
+→ final normalization → radd where applicable → money distribution
+```
+
+Awl is a **last-resort** mechanism: it is never applied merely because
+apparent shares exceed the estate. The engine first confirms that no
+applicable asabah/residue rule resolves the case (see `awl.ts` →
+`shouldApplyAwl`, which returns `{ applies, reasonKey, ruleId }`).
+
+### Special asabah rule (pending scholar verification)
+
+Based on the report supplied for this project, preserved verbatim in
+`src/shafii/specialAsabah.ts`:
+
+> للإبنة النصف ولابنة الابن السدس تكملة للثلثين ، وما بقي فللأخت
+
+For the exact configuration **daughter (1) + son's daughter (≥1, unblocked)
++ full sister (≥1, unblocked) + no male residuary**, the engine computes:
+
+| Heir           | Share                  | Class  |
+| -------------- | ---------------------- | ------ |
+| Daughter       | 1/2                    | Furud  |
+| Son's daughter | 1/6 (completing 2/3)   | Furud  |
+| Full sister    | remainder (1/3)        | Asabah |
+
+**Awl is NOT applied.** The result screen states this explicitly, and the
+rule carries `verificationStatus: PENDING_SCHOLAR_VERIFICATION` — the
+application does not claim independent religious verification of the
+source or its interpretation.
+
+The rule is **not generalized**: it never fires outside its exact
+conditions, and genuine awl cases (e.g. husband + two full sisters → 3/7,
+4/7) still apply awl. Female asabah cases (daughter, son's daughter, full
+sister, paternal half-sister) are documented as an explicit rules table
+(`FEMALE_ASABAH_TABLE`) — condition, asabah type, cause, residue handling
+— and are visible in Review Mode alongside the full Awl-vs-Asabah
+decision trail (fixed shares, potential residue, potential asabah,
+special rule, awl candidate, final decision, rule id).
 
 ### Scholar verification process
 

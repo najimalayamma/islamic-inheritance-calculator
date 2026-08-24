@@ -68,7 +68,9 @@ export interface RuleReference {
 export interface ShafiiRule {
   id: string;
   madhhab: "shafii";
-  category: "ELIGIBILITY" | "HAJB" | "FURUD" | "ASABAH" | "AWL" | "RADD" | "BAYT_AL_MAL";
+  category: "ELIGIBILITY" | "HAJB" | "FURUD" | "ASABAH" | "AWL" | "RADD" | "BAYT_AL_MAL" | "SPECIAL_ASABAH";
+  /** Verbatim source text of the rule's report, where supplied. */
+  sourceText?: string;
   description: { ar: string; en: string; ml: string };
   conditions: { ar: string; en: string };
   result: { ar: string; en: string };
@@ -126,6 +128,48 @@ export interface CalculationStep {
   entries: StepEntry[];
 }
 
+/** Why the engine did or did not apply Awl (reviewer-auditable). */
+export interface AwlDecision {
+  applies: boolean;
+  reasonKey: string;
+  ruleId?: string;
+}
+
+/** The special asabah/residue rule matched for this calculation, if any. */
+export interface SpecialAsabahRuleMatch {
+  ruleId: string;
+  sourceText: string;
+  fixedShares: { daughter: string; sonsDaughter: string };
+  residueRecipient: RelationshipType;
+  residueType: "ASABAH";
+  awl: boolean;
+  verificationStatus: "PENDING_SCHOLAR_VERIFICATION" | RuleVerificationStatus;
+}
+
+export interface SpecialAsabahConditionCheck {
+  conditionKey: string;
+  passed: boolean;
+}
+
+/** Full Awl-vs-Asabah decision trail for developer/reviewer mode. */
+export interface AwlDebugInfo {
+  furudTotal: string;
+  potentialResidue: string;
+  potentialAsabah: RelationshipType[];
+  specialRuleId: string | null;
+  specialAsabahEvaluation: SpecialAsabahConditionCheck[];
+  awlCandidate: boolean;
+  finalDecision: "ASABAH_RESIDUE" | "AWL" | "NO_ADJUSTMENT";
+  ruleId?: string;
+}
+
+/** Compact distribution summary shown on the result screen. */
+export interface DistributionSummary {
+  fixedTotal: string;
+  residue: string;
+  asabahRecipients: RelationshipType[];
+}
+
 export interface CalculationResult {
   input: CalculationInput;
   heirs: HeirResult[];
@@ -133,7 +177,10 @@ export interface CalculationResult {
   blockedHeirs: HeirResult[];
   ineligibleHeirs: HeirResult[];
   baytAlMal: BaytAlMalResult | null;
-  awl: { applied: boolean; baseTotal: string };
+  awl: { applied: boolean; baseTotal: string; decision: AwlDecision };
+  specialAsabah: SpecialAsabahRuleMatch | null;
+  awlDebug: AwlDebugInfo;
+  summary: DistributionSummary;
   radd: { applied: boolean; residue: string };
   steps: CalculationStep[];
   estateValue: number;
